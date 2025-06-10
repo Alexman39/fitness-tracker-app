@@ -15,7 +15,7 @@ function App() {
 
         <>
             <Navbar />
-            <h1 className="text-5xl font-extrabold text-blue-600">Tailwind is working!</h1>
+            <h1 className="text-4xl font-bold text-blue-600">🚀 Tailwind is working!</h1>
             <Routes>
                 <Route path="/" element={<Navigate to={currentUser ? "/dashboard" : "/login"} />} />
                 <Route path="/signup" element={<SignUp />} />
