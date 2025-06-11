@@ -1,67 +1,48 @@
-import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {AuthContext} from "../AuthContext.jsx";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useContext } from "react";
+import { AuthContext } from "@/AuthContext"; // replace with your actual context
+import { signOut } from "firebase/auth";
+import { auth } from "@/firebase";
 
-function Navbar() {
-    const { currentUser, logout } = useContext(AuthContext);
-    const navigate = useNavigate();
+export default function Navbar() {
+    const { currentUser } = useContext(AuthContext);
 
     const handleLogout = async () => {
-        await logout();
-        navigate('/login');
+        await signOut(auth);
     };
 
     return (
-        <nav style={styles.nav}>
-            <Link to="/" style={styles.logo}>🏋️ FitTrack</Link>
-            <div style={styles.links}>
-                {currentUser ? (
+        <nav className="flex items-center justify-between px-6 py-4 border-b shadow-sm">
+            {/* Left Side Nav Links */}
+            <div className="flex items-center gap-4">
+                <Link to="/" className="text-lg font-bold">FitnessApp</Link>
+                {currentUser && (
                     <>
-                        <Link to="/dashboard" style={styles.link}>Dashboard</Link>
-                        <button onClick={handleLogout} style={styles.button}>Logout</button>
+                        <Link to="/dashboard" className="text-sm">Dashboard</Link>
+                        <Link to="/goals" className="text-sm">Workouts</Link>
+                        <Link to="/workouts" className="text-sm">Nutrition</Link>
+                    </>
+                )}
+            </div>
+
+            {/* Right Side Auth Buttons */}
+            <div className="flex items-center gap-2">
+                {!currentUser ? (
+                    <>
+                        <Link to="/login">
+                            <Button variant="outline" className="cursor-pointer">Login</Button>
+                        </Link>
+                        <Link to="/signup">
+                            <Button className="cursor-pointer">Sign Up</Button>
+                        </Link>
                     </>
                 ) : (
-                    <>
-                        <Link to="/login" style={styles.link}>Login</Link>
-                        <Link to="/signup" style={styles.link}>Sign Up</Link>
-                    </>
+                    <Button onClick={handleLogout} className="cursor-pointer">
+                        Logout
+                    </Button>
                 )}
             </div>
         </nav>
     );
 }
-
-const styles = {
-    nav: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '1rem 2rem',
-        backgroundColor: '#222',
-        color: '#fff',
-        alignItems: 'center',
-        width: '80em',
-    },
-    logo: {
-        textDecoration: 'none',
-        fontWeight: 'bold',
-        fontSize: '1.2rem',
-        color: '#fff'
-    },
-    links: {
-        display: 'flex',
-        gap: '1rem'
-    },
-    link: {
-        textDecoration: 'none',
-        color: '#fff'
-    },
-    button: {
-        backgroundColor: '#444',
-        border: 'none',
-        color: '#fff',
-        padding: '0.5rem 1rem',
-        cursor: 'pointer'
-    }
-};
-
-export default Navbar;
