@@ -18,7 +18,7 @@ export async function generateAndSavePlan(profile, userId) {
         tdee: Math.round(tdee),
         calories,
         macros,
-        planStartDate: new Date(),
+        planStartDate: new Date().toISOString(),
         goal: profile.goal,
         targetWeight: profile.targetWeight,
         trainingFrequency: profile.trainingFrequency,

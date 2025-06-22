@@ -7,6 +7,8 @@ import { AuthContext } from './AuthContext';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard.jsx';
 import Navbar from './components/Navbar.jsx';
+import WorkoutPage from "@/components/WorkoutPage.jsx";
+import { Toaster } from "react-hot-toast";
 
 function App() {
     const { currentUser } = useContext(AuthContext);
@@ -23,7 +25,9 @@ function App() {
                     path="/dashboard"
                     element={currentUser ? <Dashboard /> : <Navigate to="/login" />}
                 />
+                <Route path="/workout" element={<WorkoutPage />} />
             </Routes>
+            <Toaster position="top-center" reverseOrder={false}/>
         </>
     );
 }

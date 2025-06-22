@@ -20,8 +20,7 @@ export default function Navbar() {
                 {currentUser && (
                     <>
                         <Link to="/dashboard" className="text-sm">Dashboard</Link>
-                        <Link to="/goals" className="text-sm">Workouts</Link>
-                        <Link to="/workouts" className="text-sm">Nutrition</Link>
+                        <Link to="/workout" className="text-sm">Workout</Link>
                     </>
                 )}
             </div>
