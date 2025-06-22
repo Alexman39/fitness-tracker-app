@@ -5,7 +5,7 @@ import { AuthContext } from "@/AuthContext";
 import { useContext } from "react";
 import toast from "react-hot-toast";
 
-export default function DoWorkout({ workout, onFinish }) {
+export default function DoWorkout({ workout, onFinish, onDiscard }) {
     const { currentUser } = useContext(AuthContext);
     const [actualReps, setActualReps] = useState(() =>
         workout.exercises.map(ex =>
@@ -77,6 +77,18 @@ export default function DoWorkout({ workout, onFinish }) {
             >
                 Save Workout Log
             </button>
+
+            <button
+                onClick={() => {
+                    if (confirm("Are you sure you want to discard this workout? Progress will be lost.")) {
+                        onDiscard(); // go back to previous view
+                    }
+                }}
+                className="mt-2 ml-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+                Discard Workout
+            </button>
+
         </div>
     );
 }

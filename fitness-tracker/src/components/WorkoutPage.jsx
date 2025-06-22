@@ -1,10 +1,10 @@
 import { useState, useEffect, useContext } from "react";
 import { db } from "@/firebase";
-import { collection, getDocs } from "firebase/firestore";
 import { AuthContext } from "@/AuthContext";
 import WorkoutForm from "@/components/WorkoutForm";
 import DoWorkout from "@/components/DoWorkout.jsx";
 import CompletedWorkouts from "@/components/CompletedWorkouts"; // this is the form UI we previously made
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 
 export default function WorkoutPage() {
     const { currentUser } = useContext(AuthContext);
@@ -13,6 +13,7 @@ export default function WorkoutPage() {
     const [selectedWorkout, setSelectedWorkout] = useState(null);
     const [editingWorkout, setEditingWorkout] = useState(null);
     const [workoutToDo, setWorkoutToDo] = useState(null);
+    const [completedWorkoutsKey, setCompletedWorkoutsKey] = useState(0);
 
     const fetchWorkouts = async () => {
         if (!currentUser) return;
@@ -29,6 +30,17 @@ export default function WorkoutPage() {
         fetchWorkouts();
     }, [currentUser]);
 
+    const handleDeleteWorkout = async (workoutId) => {
+        if (!confirm("Are you sure you want to delete this workout?")) return;
+
+        try {
+            await deleteDoc(doc(db, "customWorkouts", workoutId));
+            await fetchWorkouts(); // refresh the list
+        } catch (err) {
+            console.error("Failed to delete workout:", err);
+            alert("Something went wrong. Try again.");
+        }
+    };
 
     return (
         <div className="max-w-2xl mx-auto p-4">
@@ -92,6 +104,12 @@ export default function WorkoutPage() {
                             >
                                 Do Workout
                             </button>
+                            <button
+                                onClick={() => handleDeleteWorkout(w.id)}
+                                className="ml-4 text-red-600 hover:underline"
+                            >
+                                Delete Workout
+                            </button>
                         </li>
                     ))}
 
@@ -114,9 +132,12 @@ export default function WorkoutPage() {
                     workout={workoutToDo}
                     onFinish={() => {
                         setWorkoutToDo(null);
+                        setCompletedWorkoutsKey(prev => prev + 1); // trigger refresh
                     }}
+                    onDiscard={() => setWorkoutToDo(null)}
                 />
             )}
+
 
             {showForm && (
                 <div className="mt-6">
@@ -131,7 +152,7 @@ export default function WorkoutPage() {
                 </div>
             )}
 
-            <CompletedWorkouts/>
+            <CompletedWorkouts refreshKey={completedWorkoutsKey} />
 
         </div>
     );

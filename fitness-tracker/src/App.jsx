@@ -9,6 +9,7 @@ import Dashboard from './components/Dashboard.jsx';
 import Navbar from './components/Navbar.jsx';
 import WorkoutPage from "@/components/WorkoutPage.jsx";
 import { Toaster } from "react-hot-toast";
+import HistoryPage from "@/components/history.jsx";
 
 function App() {
     const { currentUser } = useContext(AuthContext);
@@ -26,6 +27,7 @@ function App() {
                     element={currentUser ? <Dashboard /> : <Navigate to="/login" />}
                 />
                 <Route path="/workout" element={<WorkoutPage />} />
+                <Route path="/history" element={<HistoryPage />} />
             </Routes>
             <Toaster position="top-center" reverseOrder={false}/>
         </>

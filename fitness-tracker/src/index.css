@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+body {
+  @apply bg-neutral-800 text-white;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
