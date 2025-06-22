@@ -2,7 +2,9 @@ import { useState, useEffect, useContext } from "react";
 import { db } from "@/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { AuthContext } from "@/AuthContext";
-import WorkoutForm from "@/components/WorkoutForm"; // this is the form UI we previously made
+import WorkoutForm from "@/components/WorkoutForm";
+import DoWorkout from "@/components/DoWorkout.jsx";
+import CompletedWorkouts from "@/components/CompletedWorkouts"; // this is the form UI we previously made
 
 export default function WorkoutPage() {
     const { currentUser } = useContext(AuthContext);
@@ -10,6 +12,7 @@ export default function WorkoutPage() {
     const [workouts, setWorkouts] = useState([]);
     const [selectedWorkout, setSelectedWorkout] = useState(null);
     const [editingWorkout, setEditingWorkout] = useState(null);
+    const [workoutToDo, setWorkoutToDo] = useState(null);
 
     const fetchWorkouts = async () => {
         if (!currentUser) return;
@@ -83,6 +86,12 @@ export default function WorkoutPage() {
                             >
                             Edit Workout
                             </button>
+                            <button
+                                onClick={() => setWorkoutToDo(w)}
+                                className="ml-4 text-purple-600 hover:underline"
+                            >
+                                Do Workout
+                            </button>
                         </li>
                     ))}
 
@@ -100,6 +109,15 @@ export default function WorkoutPage() {
                 </div>
             )}
 
+            {workoutToDo && (
+                <DoWorkout
+                    workout={workoutToDo}
+                    onFinish={() => {
+                        setWorkoutToDo(null);
+                    }}
+                />
+            )}
+
             {showForm && (
                 <div className="mt-6">
                     <WorkoutForm
@@ -113,7 +131,7 @@ export default function WorkoutPage() {
                 </div>
             )}
 
-
+            <CompletedWorkouts/>
 
         </div>
     );
