@@ -5,15 +5,16 @@ import WorkoutForm from "@/components/WorkoutForm";
 import DoWorkout from "@/components/DoWorkout.jsx";
 import CompletedWorkouts from "@/components/CompletedWorkouts"; // this is the form UI we previously made
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import {Eye, Pencil, Play, X} from 'lucide-react';
+import Modal from "@/components/Modal.jsx";
 
 export default function WorkoutPage() {
     const { currentUser } = useContext(AuthContext);
-    const [showForm, setShowForm] = useState(false);
     const [workouts, setWorkouts] = useState([]);
     const [selectedWorkout, setSelectedWorkout] = useState(null);
-    const [editingWorkout, setEditingWorkout] = useState(null);
-    const [workoutToDo, setWorkoutToDo] = useState(null);
     const [completedWorkoutsKey, setCompletedWorkoutsKey] = useState(0);
+    const [modalMode, setModalMode] = useState(null); // "view" or "edit"
+
 
     const fetchWorkouts = async () => {
         if (!currentUser) return;
@@ -46,69 +47,131 @@ export default function WorkoutPage() {
         <div className="max-w-2xl mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Your Workouts</h1>
 
-            {selectedWorkout && (
-                <div className="mt-6 p-4 border rounded bg-gray-50">
-                    <h2 className="text-xl font-bold mb-2">{selectedWorkout.name}</h2>
+            <Modal
+                isOpen={!!modalMode}
+                onClose={() => {
+                    setSelectedWorkout(null);
+                    setModalMode(null);
+                }}
+            >
+                {modalMode === "view" && selectedWorkout && (
+                    <>
+                        <h2 className="text-xl font-bold mb-4 text-black">{selectedWorkout.name}</h2>
+                        <table className="w-full text-left border border-gray-300">
+                            <thead className="bg-violet-600">
+                            <tr>
+                                <th className="p-2 border-b">Exercise</th>
+                                <th className="p-2 border-b">Sets</th>
+                                <th className="p-2 border-b">Reps</th>
+                            </tr>
+                            </thead>
+                            <tbody className="text-black">
+                            {selectedWorkout.exercises.map((ex, idx) => {
+                                const repNumbers = ex.sets.map(rep => parseInt(rep, 10));
+                                const totalSets = ex.sets.length;
+                                const minReps = Math.min(...repNumbers);
+                                const maxReps = Math.max(...repNumbers);
 
-                    {selectedWorkout.exercises.map((ex, idx) => (
-                        <div key={idx} className="mb-4">
-                            <h3 className="font-semibold">{ex.name}</h3>
-                            <ul className="ml-4 list-disc text-sm text-gray-700">
-                                {ex.sets.map((rep, i) => (
-                                    <li key={i}>Set {i + 1}: {rep} reps</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+                                return (
+                                    <tr key={idx} className="odd:bg-white even:bg-gray-100">
+                                        <td className="p-2 border-b">{ex.name}</td>
+                                        <td className="p-2 border-b">{totalSets}</td>
+                                        <td className="p-2 border-b">
+                                            {minReps === maxReps ? `${minReps} Reps` : `${minReps}-${maxReps} Reps`}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            </tbody>
+                        </table>
+                    </>
+                )}
 
-                    <button
-                        onClick={() => setSelectedWorkout(null)}
-                        className="mt-4 px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                    >
-                        Close
-                    </button>
-                </div>
-            )}
+                {modalMode === "edit" && selectedWorkout && (
+                    <WorkoutForm
+                        workoutToEdit={selectedWorkout}
+                        mode="edit"
+                        onSave={async () => {
+                            await fetchWorkouts();
+                            setSelectedWorkout(null);
+                            setModalMode(null);
+                        }}
+                        onCancel={() => {
+                            setSelectedWorkout(null);
+                            setModalMode(null);
+                        }}
+                    />
+                )}
 
-            {workouts.length === 0 && !showForm && (
-                <div className="text-center">
-                    <p className="text-gray-600 mb-4">You haven't created any workouts yet.</p>
-                </div>
-            )}
+                {modalMode === "do" && selectedWorkout && (
+                    <>
+                        <DoWorkout
+                            workout={selectedWorkout}
+                            onFinish={() => {
+                                setSelectedWorkout(null);
+                                setModalMode(null);
+                                setCompletedWorkoutsKey(prev => prev + 1); // refresh completed workouts
+                            }}
+                            onDiscard={() => {
+                                setSelectedWorkout(null);
+                                setModalMode(null);
+                            }}
+                        />
+                    </>
+                )}
+
+                {modalMode === "create" && (
+                    <WorkoutForm
+                        workoutToEdit={null}
+                        mode="create"
+                        onSave={async () => {
+                            await fetchWorkouts();
+                            setModalMode(null);
+                        }}
+                        onCancel={() => setModalMode(null)}
+                    />
+                )}
+            </Modal>
 
             {workouts.length > 0 && (
                 <ul className="space-y-4 mt-4 mb-4">
                     {workouts.map(w => (
-                        <li key={w.id} className="p-4 border rounded shadow">
+                        <li key={w.id} className="p-4 border rounded-3xl shadow bg-white text-black">
                             <h2 className="font-semibold">{w.name}</h2>
                             <p className="text-sm text-gray-500">{w.exercises.length} exercises</p>
 
                             <button
-                                onClick={() => setSelectedWorkout(w)}
-                                className="mt-2 text-blue-600 hover:underline"
+                                onClick={() => {
+                                    setSelectedWorkout(w);
+                                    setModalMode("view");
+                                }}
+                                className="mt-2 text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                             >
-                                View
+                                <Eye/>
                             </button>
                             <button
                                 onClick={() => {
-                                    setEditingWorkout(w);
-                                    setShowForm(true);
-                            }}
-                                className="ml-4 text-green-600 hover:underline"
+                                    setSelectedWorkout(w);
+                                    setModalMode("edit");
+                                }}
+                                className="ml-4 text-green-600 hover:text-green-800 hover:underline cursor-pointer"
                             >
-                            Edit Workout
+                                <Pencil/>
                             </button>
                             <button
-                                onClick={() => setWorkoutToDo(w)}
-                                className="ml-4 text-purple-600 hover:underline"
+                                onClick={() => {
+                                    setSelectedWorkout(w);
+                                    setModalMode("do");
+                                }}
+                                className="ml-4 text-purple-600 hover:text-purple-800 hover:underline cursor-pointer"
                             >
-                                Do Workout
+                                <Play />
                             </button>
                             <button
                                 onClick={() => handleDeleteWorkout(w.id)}
-                                className="ml-4 text-red-600 hover:underline"
+                                className="ml-4 text-red-600 hover:text-red-800 hover:underline cursor-pointer"
                             >
-                                Delete Workout
+                                <X/>
                             </button>
                         </li>
                     ))}
@@ -116,39 +179,30 @@ export default function WorkoutPage() {
                 </ul>
             )}
 
-            {!showForm && (
-                <div className="text-center mb-6">
-                    <button
-                        onClick={() => setShowForm(true)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                        Create Workout
-                    </button>
-                </div>
-            )}
-
-            {workoutToDo && (
-                <DoWorkout
-                    workout={workoutToDo}
-                    onFinish={() => {
-                        setWorkoutToDo(null);
-                        setCompletedWorkoutsKey(prev => prev + 1); // trigger refresh
+            <div className="text-center mb-6">
+                <button
+                    onClick={() => {
+                        setSelectedWorkout(null);
+                        setModalMode("create");
                     }}
-                    onDiscard={() => setWorkoutToDo(null)}
-                />
-            )}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-3xl hover:bg-blue-700 cursor-pointer"
+                >
+                    Create Workout
+                </button>
+            </div>
 
-
-            {showForm && (
-                <div className="mt-6">
-                    <WorkoutForm
-                        workoutToEdit={editingWorkout}
-                        onSave={async () => {
-                            await fetchWorkouts();
-                            setShowForm(false);
-                            setEditingWorkout(null); // clear after save
+            {workouts.length === 0 && (
+                <div className="text-center mt-6">
+                    <p className="text-gray-600 mb-4">You haven't created any workouts yet.</p>
+                    <button
+                        onClick={() => {
+                            setSelectedWorkout(null);
+                            setModalMode("create");
                         }}
-                    />
+                        className="px-4 py-2 bg-blue-600 text-white rounded-3xl hover:bg-blue-700 cursor-pointer"
+                    >
+                        Create Your First Workout
+                    </button>
                 </div>
             )}
 

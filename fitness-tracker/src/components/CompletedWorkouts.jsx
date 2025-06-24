@@ -74,29 +74,17 @@ export default function CompletedWorkouts({ refreshKey }) {
     if (logs.length === 0) return <p className="text-center text-gray-500">No completed workouts yet.</p>;
 
     return (
-        <div className="max-w-3xl mx-auto p-4">
+        <div className="max-w-3xl mx-auto p-0">
             <h2 className="text-2xl font-bold mb-6">Workout History</h2>
 
             <ul className="space-y-6">
                 {logs.map((log) => (
-                    <li key={log.id} className="p-4 bg-white text-primary border rounded-3xl shadow"git st>
+                    <li key={log.id} className="p-4 bg-white text-primary border rounded-3xl shadow">
                         <h3 className="text-lg font-semibold">{log.workoutName}</h3>
                         <p className="text-sm text-gray-500 mb-2">
                             {format(log.completedAt.toDate(), "PPPpp")}
                         </p>
 
-                        {log.completedExercises.map((ex, idx) => (
-                            <div key={idx} className="mb-2">
-                                <p className="font-medium">{ex.name}</p>
-                                <ul className="ml-4 list-disc text-sm">
-                                    {ex.planned.map((plannedRep, setIdx) => (
-                                        <li key={setIdx}>
-                                            Set {setIdx + 1}: {ex.actual[setIdx]} reps (planned {plannedRep})
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
                         <button
                             onClick={() => handleDeleteCompleted(log.id)}
                             className="text-sm text-red-600 hover:underline mb-2"

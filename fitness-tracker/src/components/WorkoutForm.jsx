@@ -5,8 +5,7 @@ import { useContext } from "react";
 import { AuthContext } from "@/AuthContext";
 import toast from "react-hot-toast";
 
-export default function WorkoutForm({ onSave, workoutToEdit }) {
-    const { currentUser } = useContext(AuthContext);
+export default function WorkoutForm({ onSave, workoutToEdit, onCancel, mode = "create" }) {    const { currentUser } = useContext(AuthContext);
     const [name, setName] = useState(workoutToEdit ? workoutToEdit.name : "");
     const [exercises, setExercises] = useState(workoutToEdit ? workoutToEdit.exercises : []);
 
@@ -15,7 +14,8 @@ export default function WorkoutForm({ onSave, workoutToEdit }) {
             ...exercises,
             {
                 name: "",
-                sets: [], // each set is a separate number of reps
+                sets: [],
+                numberOfSets: 0 // ✅ New: directly store the number
             },
         ]);
     };
@@ -27,9 +27,28 @@ export default function WorkoutForm({ onSave, workoutToEdit }) {
     };
 
     const handleSetCountChange = (index, value) => {
-        const count = parseInt(value);
         const updated = [...exercises];
-        updated[index].sets = Array(count).fill("");
+
+        // Allow empty input temporarily
+        if (value === "") {
+            updated[index].numberOfSets = value;
+            setExercises(updated);
+            return;
+        }
+
+        let count = parseInt(value);
+
+        if (isNaN(count)) count = 1;
+        if (count > 10) count = 10;
+
+        updated[index].numberOfSets = count;
+
+        if (updated[index].sets.length < count) {
+            updated[index].sets = [...updated[index].sets, ...Array(count - updated[index].sets.length).fill("")];
+        } else {
+            updated[index].sets = updated[index].sets.slice(0, count);
+        }
+
         setExercises(updated);
     };
 
@@ -40,10 +59,30 @@ export default function WorkoutForm({ onSave, workoutToEdit }) {
     };
 
     const handleRemoveExercise = (indexToRemove) => {
-        if (confirm("Are you sure you want to delete this exercise?")) {
-            const updated = exercises.filter((_, index) => index !== indexToRemove);
-            setExercises(updated);
-        }
+        toast((t) => (
+            <div>
+                <p className="font-semibold mb-2">Delete this exercise?</p>
+                <div className="flex justify-end gap-4">
+                    <button
+                        className="text-gray-500 hover:underline"
+                        onClick={() => toast.dismiss(t.id)}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        className="text-red-600 font-semibold hover:underline"
+                        onClick={() => {
+                            const updated = exercises.filter((_, index) => index !== indexToRemove);
+                            setExercises(updated);
+                            toast.dismiss(t.id);
+                            toast.success("Exercise deleted.");
+                        }}
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
+        ), { duration: 8000 });
     };
 
     const handleSaveWorkout = async () => {
@@ -79,8 +118,12 @@ export default function WorkoutForm({ onSave, workoutToEdit }) {
 
     useEffect(() => {
         if (workoutToEdit) {
+            const loadedExercises = workoutToEdit.exercises.map(ex => ({
+                ...ex,
+                numberOfSets: ex.sets.length
+            }));
             setName(workoutToEdit.name);
-            setExercises(workoutToEdit.exercises);
+            setExercises(loadedExercises);
         }
     }, [workoutToEdit]);
 
@@ -88,8 +131,11 @@ export default function WorkoutForm({ onSave, workoutToEdit }) {
 
 
     return (
-        <div className="p-4 border rounded bg-white shadow">
-            <h2 className="text-lg font-bold mb-2">Create a New Workout</h2>
+        <div className="m-4 rounded-3xl text-black relative">
+
+            <h2 className="text-lg font-bold mb-2">
+                {mode === "edit" ? "Edit Workout" : "Create a New Workout"}
+            </h2>
 
             <input
                 type="text"
@@ -101,31 +147,41 @@ export default function WorkoutForm({ onSave, workoutToEdit }) {
 
             {exercises.map((exercise, index) => (
                 <div key={index} className="mb-4 p-2 border rounded">
-                    <input
-                        type="text"
-                        placeholder="Exercise name"
-                        value={exercise.name}
-                        onChange={e => handleExerciseNameChange(index, e.target.value)}
-                        className="w-full p-1 mb-2 border rounded"
-                    />
 
-                    <input
-                        type="number"
-                        placeholder="Number of sets"
-                        onChange={e => handleSetCountChange(index, e.target.value)}
-                        className="w-full p-1 mb-2 border rounded"
-                    />
+                    <div className="flex gap-4 mb-2">
+                        <input
+                            type="text"
+                            placeholder="Exercise name"
+                            value={exercise.name}
+                            onChange={e => handleExerciseNameChange(index, e.target.value)}
+                            className="flex-1 p-1 border rounded"
+                        />
 
-                    <div className="flex flex-wrap gap-2">
+                        <input
+                            type="number"
+                            placeholder="Sets"
+                            min="1"
+                            max="10"
+                            value={exercise.numberOfSets}
+                            onChange={e => handleSetCountChange(index, e.target.value)}
+                            onBlur={e => {
+                                if (e.target.value === "" || parseInt(e.target.value) < 1) {
+                                    handleSetCountChange(index, "1");
+                                }
+                            }}
+                            className="w-24 p-1 border rounded"
+                        />
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-2">
                         {exercise.sets.map((rep, setIndex) => (
                             <input
                                 key={setIndex}
                                 type="number"
-                                placeholder={`Reps for Set ${setIndex + 1}`}
+                                placeholder={`Reps`}
+                                min="0"
                                 value={rep}
-                                onChange={e =>
-                                    handleRepsChange(index, setIndex, e.target.value)
-                                }
+                                onChange={e => handleRepsChange(index, setIndex, e.target.value)}
                                 className="w-24 p-1 border rounded"
                             />
                         ))}
@@ -143,17 +199,18 @@ export default function WorkoutForm({ onSave, workoutToEdit }) {
 
             <button
                 onClick={handleAddExercise}
-                className="mt-2 mb-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                className="mt-2 mr-2 mb-4 px-4 py-2 bg-green-600 text-white rounded-3xl hover:bg-green-700 cursor-pointer"
             >
                 + Add Exercise
             </button>
 
             <button
                 onClick={handleSaveWorkout}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-3xl hover:bg-blue-700 cursor-pointer"
             >
                 Save Workout
             </button>
+
         </div>
     );
 

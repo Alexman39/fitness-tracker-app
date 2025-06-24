@@ -4,6 +4,7 @@ import { useContext } from "react";
 import { AuthContext } from "@/AuthContext"; // replace with your actual context
 import { signOut } from "firebase/auth";
 import { auth } from "@/firebase";
+import {CircleUserRound} from 'lucide-react';
 
 export default function Navbar() {
     const { currentUser } = useContext(AuthContext);
@@ -37,9 +38,14 @@ export default function Navbar() {
                         </Link>
                     </>
                 ) : (
-                    <Button onClick={handleLogout} className="cursor-pointer">
-                        Logout
-                    </Button>
+                    <>
+                        <Button onClick={handleLogout} className="cursor-pointer">
+                            Logout
+                        </Button>
+                        <Link to="/account" className="text-sm">
+                            <Button variant="outline" className="rounded-full cursor-pointer text-black"><CircleUserRound/></Button>
+                        </Link>
+                    </>
                 )}
             </div>
         </nav>

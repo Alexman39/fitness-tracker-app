@@ -8,9 +8,7 @@ import toast from "react-hot-toast";
 export default function DoWorkout({ workout, onFinish, onDiscard }) {
     const { currentUser } = useContext(AuthContext);
     const [actualReps, setActualReps] = useState(() =>
-        workout.exercises.map(ex =>
-            ex.sets.map(rep => rep) // pre-fill with planned reps
-        )
+        workout.exercises.map(ex => ex.sets.map(rep => rep)) // pre-fill with planned reps
     );
 
     const handleRepChange = (exIndex, setIndex, value) => {
@@ -43,52 +41,47 @@ export default function DoWorkout({ workout, onFinish, onDiscard }) {
     };
 
     return (
-        <div className="p-4 bg-white rounded shadow">
-            <h2 className="text-xl font-bold mb-4">Log Your Workout: {workout.name}</h2>
+        <div className="p-4 bg-white text-black">
+            <h2 className="text-2xl font-bold mb-6">Log Your Workout: {workout.name}</h2>
 
             {workout.exercises.map((ex, exIndex) => (
-                <div key={exIndex} className="mb-4">
-                    <h3 className="font-semibold">{ex.name}</h3>
+                <div key={exIndex} className="mb-6 p-4 border rounded-3xl shadow bg-gray-50">
+                    <h3 className="font-semibold text-lg mb-2">{ex.name}</h3>
+                    <p className="text-sm text-gray-500 mb-4">Planned Sets: {ex.sets.length}</p>
 
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex flex-wrap gap-4">
                         {ex.sets.map((plannedReps, setIndex) => (
-                            <input
-                                key={setIndex}
-                                type="number"
-                                placeholder={`Set ${setIndex + 1} (planned: ${plannedReps} reps)`}
-                                value={actualReps[exIndex][setIndex]}
-                                onChange={e => handleRepChange(exIndex, setIndex, e.target.value)}
-                                className="w-36 p-1 border rounded"
-                            />
+                            <div key={setIndex} className="flex flex-col w-24">
+                                <label className="text-xs text-gray-500 mb-1 text-center">
+                                    Set {setIndex + 1} <br /> (Planned: {plannedReps} reps)
+                                </label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={actualReps[exIndex][setIndex]}
+                                    onChange={e => handleRepChange(exIndex, setIndex, e.target.value)}
+                                    className="p-1 border rounded text-center"
+                                />
+                            </div>
                         ))}
                     </div>
 
-                    {/* ✅ Add this summary block right here */}
-                    <p className="text-sm text-gray-600 mt-2">
-                        Planned total: {ex.sets.reduce((sum, r) => sum + parseInt(r || 0), 0)} reps |
-                        Actual total: {actualReps[exIndex].reduce((sum, r) => sum + parseInt(r || 0), 0)} reps
+                    <p className="text-sm text-gray-600 mt-4">
+                        <span className="font-semibold">Planned Total:</span> {ex.sets.reduce((sum, r) => sum + parseInt(r || 0), 0)} reps |
+                        <span className="font-semibold ml-2">Actual Total:</span> {actualReps[exIndex].reduce((sum, r) => sum + parseInt(r || 0), 0)} reps
                     </p>
                 </div>
             ))}
 
-            <button
-                onClick={handleSubmit}
-                className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-                Save Workout Log
-            </button>
+            <div className="flex gap-4 mt-6">
+                <button
+                    onClick={handleSubmit}
+                    className="px-6 py-2 bg-green-600 text-white rounded-3xl hover:bg-green-700"
+                >
+                    Save Workout Log
+                </button>
 
-            <button
-                onClick={() => {
-                    if (confirm("Are you sure you want to discard this workout? Progress will be lost.")) {
-                        onDiscard(); // go back to previous view
-                    }
-                }}
-                className="mt-2 ml-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            >
-                Discard Workout
-            </button>
-
+            </div>
         </div>
     );
 }
